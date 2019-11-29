@@ -1,0 +1,101 @@
+h1 {
+    text-align: center;
+}
+
+#extra {
+    position: absolute;
+    top: 0;
+    right: 5px;
+    font-size: 0.7em;
+    text-align: right;
+}
+
+#options-top {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+#options-left, #options-right {
+    line-height: 1.8em;
+}
+
+#options-left {
+    float: left;
+    width: 50%;
+    text-align: right;
+    padding-right: 10px;
+    border-right: 3px #ddd4 solid;
+    box-sizing: border-box;
+}
+
+#options-right {
+    float: left;
+    text-align: right;
+    padding-left: 10px;
+}
+
+#options-bottom {
+    clear: both;
+    text-align: center;
+    line-height: 1.8em;
+    border-bottom: 2px #ddd4 solid;
+}
+
+select {
+    padding-right: 10px;
+}
+
+input {
+    width: 55px;
+}
+
+#div-button-calculate {
+    text-align: center;
+    margin: 5px;
+}
+
+#button-calculate {
+    font: 18px "Fira Mono";
+}
+
+table {
+    margin: 5px auto;
+}
+
+th, td {
+    text-align: center;
+    border: 1px solid #ddda;
+}
+
+th {
+    padding: 5px 15px;
+}
+
+td {
+    padding: 1px 10px;
+}
+
+#th-score {
+    padding: 5px 50px;
+}
+
+#th-notes {
+    padding: 5px 200px;
+}
+
+#score-calc {
+    text-align: center;
+}
+
+#potential-slider {
+    width: 40%;
+}
+
+#score-string {
+    margin: 0;
+}
+
+#fuck-talk {
+    color: #e99;
+    text-align: center;
+}
