@@ -21,12 +21,13 @@ function drawToPoint(pos, pressure) {
     vertices.push([pos[0], pos[1]]);
     if (oldPos === null)
         return;
-    ctx.lineWidth = pressure * 2;
+    ctx.lineWidth = pressure * 10;
     ctx.beginPath();
     ctx.moveTo(oldPos[0], oldPos[1]);
     ctx.lineTo(pos[0], pos[1]);
     ctx.stroke();
     ctx.closePath();
+    ctx.lineWidth = 5;
 }
 
 function evaluateCenter() {
@@ -56,6 +57,31 @@ function evaluateRadius(center) {
     return weightedDiff;
 }
 
+function evaluateAccuracy(center, radius) {
+    let totalLength = 0;
+    let weightedAccuracy = 0;
+    for (let i = 1; i < vertices.length; i++) {
+        let length = Math.hypot(vertices[i][0] - vertices[i - 1][0], vertices[i][1] - vertices[i - 1][1]);
+        totalLength += length;
+        let diff = Math.hypot(vertices[i][0] - center[0], vertices[i][1] - center[1]);
+        let accuracy = Math.max(1 - Math.abs(diff / radius - 1) / 0.2, 0);
+        weightedAccuracy += accuracy * length;
+    }
+    weightedAccuracy /= totalLength;
+    let lastVertex = getLastVertex();
+    let startEndDiff = Math.hypot(lastVertex[0] - center[0], lastVertex[1] - center[1])
+        - Math.hypot(vertices[0][0] - center[0], vertices[0][1] - center[1]);
+    let startEndAccuracy = Math.max(1 - Math.pow(Math.abs(startEndDiff / radius) / 0.1, 2), 0);
+    return weightedAccuracy * 0.8 + startEndAccuracy * 0.2;
+}
+
+// ellipse
+// short-axis = shortest to center
+// long-axis = farthest to center
+// (ellipse acc 60% circle acc 20% start-end 20%) * time (<1s: 100%, 1-2s: 100%-80%, >2s: 80% * 2 ^ (4-2*s))
+// PERFECT! 80%-100% GREAT! 60%-80% GOOD 0%-60%
+// TODO: start-end ARC length
+
 function evaluate() {
     let center = evaluateCenter()
 
@@ -68,10 +94,16 @@ function evaluate() {
     let radius = evaluateRadius(center);
 
     ctx.beginPath();
-    ctx.moveTo(10, 10);
-    ctx.lineTo(10 + radius, 10);
+    ctx.lineWidth = 2;
+    ctx.arc(center[0], center[1], radius, 0, Math.PI * 2);
+    ctx.strokeStyle = "#F008";
     ctx.stroke();
     ctx.closePath();
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = "#FFF";
+
+    let accuracy = evaluateAccuracy(center, radius)
+    console.log(accuracy * 100 + "%");
 }
 
 function getMousePos(mouse, element) {
@@ -91,6 +123,6 @@ function onMouseUp(e) {
 
 function onMouseMove(e) {
     if (isDrawing) {
-        drawToPoint(getMousePos(e, canvas), (1 + Math.sin(new Date().getTime() / 200)) * 2);
+        drawToPoint(getMousePos(e, canvas), typeof e.pressure == "number" ? e.pressure : 0.5);
     }
 }
