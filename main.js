@@ -55,19 +55,6 @@ function drawVertex(x, y, pressure) {
     vertices.push(new Point(x, y));
 }
 
-// ellipse
-// short-axis = shortest to center
-// long-axis = farthest to center
-// (ellipse acc 60% circle acc 20% start-end 20%) * time (<1s: 100%, 1-2s: 100%-80%, >2s: 80% * 2 ^ (4-2*s))
-// PERFECT! 80%-100% GREAT! 60%-80% GOOD 0%-60%
-// TODO: start-end ARC length
-
-// B plan
-// acc:
-// 50% shake acc
-// 30% radius acc
-// 20% start-end acc
-
 function evaluate() {
     let totalLength = 0;
 
