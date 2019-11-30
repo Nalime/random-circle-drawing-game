@@ -1,7 +1,17 @@
 const canvas = document.querySelector("#draw");
 const ctx = canvas.getContext("2d");
+const score = document.querySelector("#score");
 let vertices = Array();
 let isDrawing = false;
+
+ctx.strokeStyle = "#FFF";
+ctx.lineCap = 'round';
+
+document.addEventListener("pointerdown", onMouseDown, false);
+document.addEventListener("mouseup", onMouseUp, false);
+document.addEventListener("touchend", onMouseUp, false);
+document.addEventListener("mousemove", onMouseMove, false);
+document.addEventListener("touchmove", onTouchMove, false);
 
 class Point {
     constructor(x, y) {
@@ -33,15 +43,6 @@ class Point {
         return Math.hypot(v.x - w.x, v.y - w.y);
     }
 }
-
-ctx.strokeStyle = "#FFF";
-ctx.lineCap = 'round';
-
-document.addEventListener("pointerdown", onMouseDown, false);
-document.addEventListener("mouseup", onMouseUp, false);
-document.addEventListener("touchend", onMouseUp, false);
-document.addEventListener("mousemove", onMouseMove, false);
-document.addEventListener("touchmove", onTouchMove, false);
 
 function drawVertex(x, y, pressure) {
     ctx.lineWidth = pressure * 10;
@@ -88,24 +89,21 @@ function evaluate() {
     }
     radius /= totalLength;
 
-    let circleAccuracy = 0;
+    let radiusAccuracy = 0;
     for (let i = 1; i < vertices.length; i++) {
         let length = Point.dist(vertices[i], vertices[i - 1]);
         let distToCenter = Point.dist(vertices[i], center);
 
-        let circleAccuracyThis = Math.max(1 - Math.pow(Math.abs(distToCenter / radius - 1) / 0.1, 2), 0);
-        circleAccuracy += circleAccuracyThis * length;
+        let radiusAccuracyThis = Math.max(1 - Math.pow(Math.abs(distToCenter / radius - 1) / 0.1, 2), 0);
+        radiusAccuracy += radiusAccuracyThis * length;
     }
-    circleAccuracy /= totalLength;
+    radiusAccuracy /= totalLength;
 
     let startEndDiff = Point.dist(vertices[vertices.length - 1], center)
         - Point.dist(vertices[0], center);
     let startEndAccuracy = Math.max(1 - Math.pow(Math.abs(startEndDiff / radius) / 0.1, 2), 0);
 
-    let accuracy = circleAccuracy * 0.8 + startEndAccuracy * 0.2;
-    //console.log(`Circle: ${(circleAccuracy * 100).toFixed(1)}% `
-    //    + `Start-End: ${(startEndAccuracy * 100).toFixed(1)}% `
-    //    + `Total: ${(accuracy * 100).toFixed(1)}%`);
+    let accuracy = radiusAccuracy * 0.8 + startEndAccuracy * 0.2;
 
     ctx.lineWidth = 5;
     ctx.strokeStyle = "#F008";
@@ -119,6 +117,32 @@ function evaluate() {
     ctx.stroke();
     ctx.closePath();
     ctx.strokeStyle = "#FFF";
+
+    score.innerHTML = "";
+    if (accuracy < 0.6) {
+        score.innerHTML += "GOOD";
+        score.style.color = "#9F3";
+    } 
+    else if (accuracy < 0.8) {
+        score.innerHTML += " GREAT!";
+        score.style.color = "#D3C";
+    }
+    else if (accuracy < 0.9) {
+        score.innerHTML += " PERFECT!";
+        score.style.color = "#FEB";
+    }
+    else {
+        score.innerHTML += "<strong> PERFECT!</strong>";
+        score.style.color = "#FD3";
+    } 
+    score.innerHTML += `<br><div id=\"score-percent\">${(accuracy * 100).toFixed(1)}%<br>`
+        + `<div id=\"score-percent-detail\">(Radius: ${(radiusAccuracy * 100).toFixed(1)}%`
+        + `, Start-End: ${(startEndAccuracy * 100).toFixed(1)}%)`
+        + "</div></div>";
+
+    score.style.animation = 'none';
+    score.offsetHeight;
+    score.style.animation = null;
 }
 
 function onMouseDown(e) {
@@ -133,7 +157,7 @@ function onMouseUp(e) {
     if (!isDrawing)
         return;
     isDrawing = false;
-    if (vertices.length > 0)
+    if (vertices.length > 5)
         evaluate();
 }
 
@@ -147,9 +171,9 @@ function onMouseMove(e) {
 
 function onTouchMove(e) {
     if (isDrawing && e.touches) {
-        let touch = e.touches[0]; // Get the information for finger #1
+        let touch = e.touches[0];
         touchX = touch.pageX - canvas.offsetLeft;
         touchY = touch.pageY - canvas.offsetTop;
-        drawVertex(touchX, touchY, touch.force);
+        drawVertex(touchX, touchY, 0.2 + 0.6 * touch.force);
     }
 }
