@@ -3,31 +3,24 @@ const ctx = canvas.getContext("2d");
 let vertices = Array();
 let isDrawing = false;
 
-document.addEventListener("mousedown", onMouseDown, false);
-document.addEventListener("mouseup", onMouseUp, false);
-document.addEventListener("mousemove", onMouseMove, false);
-
 ctx.strokeStyle = "#FFF";
 ctx.lineCap = 'round';
 
-function getLastVertex() {
-    if (vertices.length === 0)
-        return null;
-    return [vertices[vertices.length - 1][0], vertices[vertices.length - 1][1]];
-}
+document.addEventListener("pointerdown", onMouseDown, false);
+document.addEventListener("mouseup", onMouseUp, false);
+document.addEventListener("touchend", onMouseUp, false);
+document.addEventListener("mousemove", onMouseMove, false);
+document.addEventListener("touchmove", onTouchMove, false);
 
-function drawToPoint(pos, pressure) {
-    oldPos = getLastVertex();
-    vertices.push([pos[0], pos[1]]);
-    if (oldPos === null)
-        return;
+function drawVertex(pos, pressure) {
     ctx.lineWidth = pressure * 10;
     ctx.beginPath();
-    ctx.moveTo(oldPos[0], oldPos[1]);
+    if (vertices.length > 0)
+        ctx.moveTo(vertices[vertices.length - 1][0], vertices[vertices.length - 1][1]);
     ctx.lineTo(pos[0], pos[1]);
     ctx.stroke();
     ctx.closePath();
-    ctx.lineWidth = 5;
+    vertices.push([pos[0], pos[1]]);
 }
 
 function evaluateCenter() {
@@ -68,8 +61,7 @@ function evaluateAccuracy(center, radius) {
         weightedAccuracy += accuracy * length;
     }
     weightedAccuracy /= totalLength;
-    let lastVertex = getLastVertex();
-    let startEndDiff = Math.hypot(lastVertex[0] - center[0], lastVertex[1] - center[1])
+    let startEndDiff = Math.hypot(vertices[vertices.length - 1][0] - center[0], vertices[vertices.length - 1][1] - center[1])
         - Math.hypot(vertices[0][0] - center[0], vertices[0][1] - center[1]);
     let startEndAccuracy = Math.max(1 - Math.pow(Math.abs(startEndDiff / radius) / 0.1, 2), 0);
     return weightedAccuracy * 0.8 + startEndAccuracy * 0.2;
@@ -85,9 +77,10 @@ function evaluateAccuracy(center, radius) {
 function evaluate() {
     let center = evaluateCenter()
 
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = "#F008";
     ctx.beginPath();
-    ctx.moveTo(center[0], center[1]);
-    ctx.lineTo(center[0] + 0.1, center[1] + 0.1);
+    ctx.lineTo(center[0], center[1]);
     ctx.stroke();
     ctx.closePath();
 
@@ -96,33 +89,47 @@ function evaluate() {
     ctx.beginPath();
     ctx.lineWidth = 2;
     ctx.arc(center[0], center[1], radius, 0, Math.PI * 2);
-    ctx.strokeStyle = "#F008";
     ctx.stroke();
     ctx.closePath();
-    ctx.lineWidth = 5;
     ctx.strokeStyle = "#FFF";
 
     let accuracy = evaluateAccuracy(center, radius)
     console.log(accuracy * 100 + "%");
 }
 
-function getMousePos(mouse, element) {
-    return [mouse.clientX - canvas.offsetLeft, mouse.clientY - canvas.offsetTop];
-}
-
 function onMouseDown(e) {
+    console.log("down");
+    if (isDrawing)
+        return;
     isDrawing = true;
     vertices = Array();
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 
 function onMouseUp(e) {
+    console.log("up");
+    if (!isDrawing)
+        return;
     isDrawing = false;
-    evaluate();
+    if (vertices.length > 0)
+        evaluate();
 }
 
 function onMouseMove(e) {
+    console.log("move");
     if (isDrawing) {
-        drawToPoint(getMousePos(e, canvas), typeof e.pressure == "number" ? e.pressure : 0.5);
+        mouseX = e.clientX - canvas.offsetLeft;
+        mouseY = e.clientY - canvas.offsetTop;
+        drawVertex([mouseX, mouseY], 0.5);
+    }
+}
+
+function onTouchMove(e) {
+    console.log("move");
+    if (isDrawing && e.touches && e.touches.length == 1) {
+        let touch = e.touches[0]; // Get the information for finger #1
+        touchX = touch.pageX - canvas.offsetLeft;
+        touchY = touch.pageY - canvas.offsetTop;
+        drawVertex([touchX, touchY], touch.force);
     }
 }
