@@ -10,10 +10,26 @@ class Point {
     }
 
     length() {
-        return Math.hypot(x, y);
+        return Math.hypot(this.x, this.y);
     }
 
-    static distance(v, w) {
+    static add(v, w) {
+        return new Point(v.x + w.x, v.y + w.y);
+    }
+
+    static diff(v, w) {
+        return new Point(w.x - v.x, w.y - v.y);
+    }
+
+    static multiply(v, s) {
+        return new Point(v.x * s, v.y * s);
+    }
+
+    static dot(v, w) {
+        return v.x * w.x + v.y * w.y;
+    }
+
+    static dist(v, w) {
         return Math.hypot(v.x - w.x, v.y - w.y);
     }
 }
@@ -52,60 +68,44 @@ function drawVertex(x, y, pressure) {
 // 20% start-end acc
 
 function evaluate() {
-    let accumulatedLength = 0;
+    let totalLength = 0;
 
-    let weightedPos = new Point(0, 0);
+    let center = new Point(0, 0);
     for (let i = 1; i < vertices.length; i++) {
-        let length = Point.distance(vertices[i], vertices[i - 1]);
-        accumulatedLength += length;
-        weightedPos.x += vertices[i].x * length;
-        weightedPos.y += vertices[i].y * length;
+        let length = Point.dist(vertices[i], vertices[i - 1]);
+        totalLength += length;
+        center.x += vertices[i].x * length;
+        center.y += vertices[i].y * length;
     }
-    let totalLength = accumulatedLength;
-    weightedPos.x /= totalLength;
-    weightedPos.y /= totalLength;
-    let center = weightedPos;
+    center.x /= totalLength;
+    center.y /= totalLength;
 
-    // accumulatedLength = 0;
-    let weightedDiff = 0;
-    // let shortRadius = -1;
-    // let shortRadiusAtLength = -1;
-    // let longRadius = -1;
-    // let longRadiusAtLength = -1;
+    let radius = 0;
     for (let i = 1; i < vertices.length; i++) {
-        let length = Point.distance(vertices[i], vertices[i - 1]);
-        // accumulatedLength += length;
-        let diff = Point.distance(vertices[i], center);
-        // if (shortRadius === -1 || diff < shortRadius) {
-        //     shortRadius = diff;
-        //     shortRadiusAtLength = accumulatedLength;
-        // }
-        // else if (diff > longRadius) {
-        //     longRadius = diff;
-        //     longRadiusAtLength = accumulatedLength;
-        // }
-        weightedDiff += diff * length;
+        let length = Point.dist(vertices[i], vertices[i - 1]);
+        let distToCenter = Point.dist(vertices[i], center);
+        radius += distToCenter * length;
     }
-    weightedDiff /= totalLength;
-    let radius = weightedDiff;
-    // if (shortRadiusAtLength >= totalLength * 0.5)
-    //     shortRadiusAtLength -= totalLength * 0.5;
-    // if (longRadiusAtLength >= totalLength * 0.5)
-    //     longRadiusAtLength -= totalLength * 0.5;
+    radius /= totalLength;
 
-    // accumulatedLength = 0;
+    let circleAccuracy = 0;
     for (let i = 1; i < vertices.length; i++) {
-        let length = Point.distance(vertices[i], vertices[i - 1]);
-        accumulatedLength += length;
-        let expectedRadius = (accumulatedLength % (totalLength / 2)) / totalLength
-        let diff = Point.distance(vertices[i], center);
-        let accuracy = Math.max(1 - Math.abs(diff / radius - 1) / 0.2, 0);
-        weightedAccuracy += accuracy * length;
+        let length = Point.dist(vertices[i], vertices[i - 1]);
+        let distToCenter = Point.dist(vertices[i], center);
+
+        let circleAccuracyThis = Math.max(1 - Math.pow(Math.abs(distToCenter / radius - 1) / 0.1, 2), 0);
+        circleAccuracy += circleAccuracyThis * length;
     }
-    weightedAccuracy /= totalLength;
-    let startEndDiff = Math.hypot(vertices[vertices.length - 1][0] - center[0], vertices[vertices.length - 1][1] - center[1])
-        - Math.hypot(vertices[0][0] - center[0], vertices[0][1] - center[1]);
+    circleAccuracy /= totalLength;
+
+    let startEndDiff = Point.dist(vertices[vertices.length - 1], center)
+        - Point.dist(vertices[0], center);
     let startEndAccuracy = Math.max(1 - Math.pow(Math.abs(startEndDiff / radius) / 0.1, 2), 0);
+
+    let accuracy = circleAccuracy * 0.8 + startEndAccuracy * 0.2;
+    //console.log(`Circle: ${(circleAccuracy * 100).toFixed(1)}% `
+    //    + `Start-End: ${(startEndAccuracy * 100).toFixed(1)}% `
+    //    + `Total: ${(accuracy * 100).toFixed(1)}%`);
 
     ctx.lineWidth = 5;
     ctx.strokeStyle = "#F008";
@@ -146,7 +146,7 @@ function onMouseMove(e) {
 }
 
 function onTouchMove(e) {
-    if (isDrawing && e.touches && e.touches.length == 1) {
+    if (isDrawing && e.touches) {
         let touch = e.touches[0]; // Get the information for finger #1
         touchX = touch.pageX - canvas.offsetLeft;
         touchY = touch.pageY - canvas.offsetTop;
