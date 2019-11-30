@@ -94,7 +94,7 @@ function evaluate() {
         let length = Point.dist(vertices[i], vertices[i - 1]);
         let distToCenter = Point.dist(vertices[i], center);
 
-        let radiusAccuracyThis = Math.max(1 - Math.pow(Math.abs(distToCenter / radius - 1) / 0.1, 2), 0);
+        let radiusAccuracyThis = Math.max(1 - Math.abs(distToCenter / radius - 1) / 0.15, 0);
         radiusAccuracy += radiusAccuracyThis * length;
     }
     radiusAccuracy /= totalLength;
