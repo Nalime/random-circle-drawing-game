@@ -160,7 +160,7 @@ function onMouseUp(e) {
         return;
     isDrawing = false;
     if (vertices.length > 5)
-        evaluate();
+        setTimeout(evaluate, 50);
 }
 
 function onMouseMove(e) {
