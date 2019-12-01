@@ -1,8 +1,12 @@
 const canvas = document.querySelector("#draw");
 const ctx = canvas.getContext("2d");
-const score = document.querySelector("#score");
+const scorePop = document.querySelector("#score-pop");
 let vertices = Array();
 let isDrawing = false;
+const perfect = document.querySelector("#scores-perfect");
+const great = document.querySelector("#scores-great");
+const good = document.querySelector("#scores-good");
+const bad = document.querySelector("#scores-bad");
 
 ctx.strokeStyle = "#FFF";
 ctx.lineCap = 'round';
@@ -105,31 +109,42 @@ function evaluate() {
     ctx.closePath();
     ctx.strokeStyle = "#FFF";
 
-    score.innerHTML = "";
+    scorePop.innerHTML = "";
     if (accuracy < 0.6) {
-        score.innerHTML += "GOOD";
-        score.style.color = "#9F3";
+        addScore(bad);
+        scorePop.innerHTML += "BAD";
+        scorePop.style.color = "#15C";
     } 
     else if (accuracy < 0.8) {
-        score.innerHTML += " GREAT!";
-        score.style.color = "#D3C";
+        addScore(good);
+        scorePop.innerHTML += "GOOD";
+        scorePop.style.color = "#9F3";
     }
     else if (accuracy < 0.9) {
-        score.innerHTML += " PERFECT!";
-        score.style.color = "#FEB";
+        addScore(great);
+        scorePop.innerHTML += " GREAT!";
+        scorePop.style.color = "#D3B";
     }
     else {
-        score.innerHTML += "<strong> PERFECT!</strong>";
-        score.style.color = "#FD3";
+        addScore(perfect);
+        scorePop.innerHTML += "<strong> PERFECT!</strong>";
+        scorePop.style.color = "#FFF";
     } 
-    score.innerHTML += `<br><div id=\"score-percent\">${(accuracy * 100).toFixed(1)}%<br>`
+    scorePop.innerHTML += `<br><div id=\"score-percent\">${(accuracy * 100).toFixed(1)}%<br>`
         + `<div id=\"score-percent-detail\">(Radius: ${(radiusAccuracy * 100).toFixed(1)}%`
         + `, Start-End: ${(startEndAccuracy * 100).toFixed(1)}%)`
         + "</div></div>";
 
-    score.style.animation = 'none';
-    score.offsetHeight;
-    score.style.animation = null;
+    scorePop.style.animation = 'none';
+    scorePop.offsetHeight;
+    scorePop.style.animation = null;
+}
+
+function addScore(obj) {
+    let splitStr = obj.innerHTML.split("<br>");
+    let num = Number.parseInt(splitStr[1]);
+    num++;
+    obj.innerHTML = splitStr[0] + "<br>" + num;
 }
 
 function onMouseDown(e) {

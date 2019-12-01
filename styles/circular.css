@@ -12,7 +12,7 @@ body {
     overflow: hidden;
 }
 
-#score {
+#score-pop {
     position: absolute;
     top: 20%;
     width: 100%;
@@ -46,4 +46,50 @@ body {
 
 #draw {
     display: block;
+}
+
+#bottom {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+}
+
+#scoreboard {
+    width: 20em;
+    text-align: center;
+    color: #ddda;
+}
+
+#scores-perfect {
+    float: left;
+    width: 5em;
+}
+
+#scores-great {
+    float: left;
+    width: 5em;
+}
+
+#scores-good {
+    float: left;
+    width: 5em;
+}
+
+#scores-bad {
+    float: left;
+    width: 5em;
+}
+
+strong {
+    --spacing: 0.05em;
+    --spacing-neg: -0.05em;
+    --blur: 0.1em;
+
+    text-shadow: 
+    var(--spacing-neg) var(--spacing-neg) var(--blur) #f22b,
+                     0 var(--spacing-neg) var(--blur) #ff2b,
+        var(--spacing) var(--spacing-neg) var(--blur) #2f2b,
+        var(--spacing)     var(--spacing) var(--blur) #2ffb,
+                     0     var(--spacing) var(--blur) #22fb,
+    var(--spacing-neg)     var(--spacing) var(--blur) #f2fb;
 }
