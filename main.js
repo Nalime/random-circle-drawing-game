@@ -3,10 +3,17 @@ const ctx = canvas.getContext("2d");
 const scorePop = document.querySelector("#score-pop");
 let vertices = Array();
 let isDrawing = false;
-const perfect = document.querySelector("#scores-perfect");
-const great = document.querySelector("#scores-great");
-const good = document.querySelector("#scores-good");
-const bad = document.querySelector("#scores-bad");
+let sessionHigh = 0;
+let careerHigh = 0;
+let sessionScores = [0, 0, 0, 0];
+let careerScores = [0, 0, 0, 0];
+const scoresElements =
+    [document.querySelector("#scores-perfect"),
+    document.querySelector("#scores-great"),
+    document.querySelector("#scores-good"),
+    document.querySelector("#scores-bad")]
+
+loadScores();
 
 ctx.strokeStyle = "#FFF";
 ctx.lineCap = 'round';
@@ -47,6 +54,15 @@ class Point {
         return Math.hypot(v.x - w.x, v.y - w.y);
     }
 }
+
+// class Judgement {
+//     constructor(p, gr, g, b) {
+//         this.perfect = p;
+//         this.great = gr;
+//         this.good = g;
+//         this.bad = b;
+//     }
+// }
 
 function drawVertex(x, y, pressure) {
     ctx.lineWidth = pressure * 10;
@@ -111,25 +127,25 @@ function evaluate() {
 
     scorePop.innerHTML = "";
     if (accuracy < 0.6) {
-        addScore(bad);
+        addScore(3);
         scorePop.innerHTML += "BAD";
         scorePop.style.color = "#15C";
-    } 
+    }
     else if (accuracy < 0.8) {
-        addScore(good);
+        addScore(2);
         scorePop.innerHTML += "GOOD";
         scorePop.style.color = "#9F3";
     }
     else if (accuracy < 0.9) {
-        addScore(great);
+        addScore(1);
         scorePop.innerHTML += " GREAT!";
         scorePop.style.color = "#D3B";
     }
     else {
-        addScore(perfect);
+        addScore(0);
         scorePop.innerHTML += "<strong> PERFECT!</strong>";
         scorePop.style.color = "#FFF";
-    } 
+    }
     scorePop.innerHTML += `<br><div id=\"score-percent\">${(accuracy * 100).toFixed(1)}%<br>`
         + `<div id=\"score-percent-detail\">(Radius: ${(radiusAccuracy * 100).toFixed(1)}%`
         + `, Start-End: ${(startEndAccuracy * 100).toFixed(1)}%)`
@@ -140,11 +156,34 @@ function evaluate() {
     scorePop.style.animation = null;
 }
 
-function addScore(obj) {
-    let splitStr = obj.innerHTML.split("<br>");
-    let num = Number.parseInt(splitStr[1]);
-    num++;
-    obj.innerHTML = splitStr[0] + "<br>" + num;
+function addScore(index) {
+    sessionScores[index]++;
+    let total = 0;
+    for (const score of sessionScores)
+        total += score;
+    for (let i = 0; i < sessionScores.length; i++) {
+        scoresElements[i].innerHTML = scoresElements[i].innerHTML.split("<br>")[0] + "<br>"
+            + sessionScores[i] + "<br>"
+            + `${(sessionScores[i] * 100 / total).toFixed(1)}%`;
+    }
+    saveScores();
+}
+
+function saveScores() {
+    for (let i = 0; i < sessionScores.length; i++)
+        document.cookie = `score${i}=${sessionScores[i]}`;
+}
+
+function loadScores() {
+    for (let i = 0; i < sessionScores.length; i++)
+        sessionScores[i] = getCookie(`score${i}`);
+}
+
+// https://stackoverflow.com/a/15724300
+function getCookie(str) {
+    var value = "; " + document.cookie;
+    var parts = value.split("; " + str + "=");
+    if (parts.length == 2) return parts.pop().split(";").shift();
 }
 
 function onMouseDown(e) {
@@ -158,9 +197,9 @@ function onMouseDown(e) {
 function onMouseUp(e) {
     if (!isDrawing)
         return;
-    isDrawing = false;
     if (vertices.length > 5)
         setTimeout(evaluate, 50);
+    isDrawing = false;
 }
 
 function onMouseMove(e) {
