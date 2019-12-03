@@ -1,22 +1,19 @@
 const canvas = document.querySelector("#draw");
 const ctx = canvas.getContext("2d");
 const scorePop = document.querySelector("#score-pop");
-let vertices = Array();
-let isDrawing = false;
-let sessionHigh = 0;
-let careerHigh = 0;
-let sessionScores = [0, 0, 0, 0];
-let careerScores = [0, 0, 0, 0];
 const scoresElements =
     [document.querySelector("#scores-perfect"),
     document.querySelector("#scores-great"),
     document.querySelector("#scores-good"),
     document.querySelector("#scores-bad")]
+let vertices = [];
+let isDrawing = false;
+let sessionHigh = 0;
+let careerHigh = 0;
+let sessionScores = [0, 0, 0, 0];
 
-loadScores();
-
-ctx.strokeStyle = "#FFF";
-ctx.lineCap = 'round';
+loadCookies();
+resetCanvasStyle();
 
 document.addEventListener("pointerdown", onMouseDown, false);
 document.addEventListener("mouseup", onMouseUp, false);
@@ -55,15 +52,6 @@ class Point {
     }
 }
 
-// class Judgement {
-//     constructor(p, gr, g, b) {
-//         this.perfect = p;
-//         this.great = gr;
-//         this.good = g;
-//         this.bad = b;
-//     }
-// }
-
 function drawVertex(x, y, pressure) {
     ctx.lineWidth = pressure * 10;
     ctx.beginPath();
@@ -76,6 +64,7 @@ function drawVertex(x, y, pressure) {
 }
 
 function evaluate() {
+    // Accuracy calculation
     let totalLength = 0;
 
     let center = new Point(0, 0);
@@ -112,6 +101,7 @@ function evaluate() {
 
     let accuracy = radiusAccuracy * 0.8 + startEndAccuracy * 0.2;
 
+    // Draw reference circle
     ctx.lineWidth = 5;
     ctx.strokeStyle = "#F008";
     ctx.beginPath();
@@ -123,26 +113,36 @@ function evaluate() {
     ctx.arc(center.x, center.y, radius, 0, Math.PI * 2);
     ctx.stroke();
     ctx.closePath();
-    ctx.strokeStyle = "#FFF";
+    resetCanvasStyle();
 
+    if (accuracy > careerHigh) {
+        careerHigh = accuracy;
+        setCookie("careerHigh", accuracy);
+    }
+
+    if (accuracy > sessionHigh) {
+        sessionHigh = accuracy;
+    }
+
+    // Increments appropriate score and show the "judgment"
     scorePop.innerHTML = "";
     if (accuracy < 0.6) {
-        addScore(3);
+        incrementScore(3);
         scorePop.innerHTML += "BAD";
         scorePop.style.color = "#15C";
     }
     else if (accuracy < 0.8) {
-        addScore(2);
+        incrementScore(2);
         scorePop.innerHTML += "GOOD";
         scorePop.style.color = "#9F3";
     }
     else if (accuracy < 0.9) {
-        addScore(1);
+        incrementScore(1);
         scorePop.innerHTML += " GREAT!";
         scorePop.style.color = "#D3B";
     }
     else {
-        addScore(0);
+        incrementScore(0);
         scorePop.innerHTML += "<strong> PERFECT!</strong>";
         scorePop.style.color = "#FFF";
     }
@@ -156,8 +156,11 @@ function evaluate() {
     scorePop.style.animation = null;
 }
 
-function addScore(index) {
+function incrementScore(index) {
     sessionScores[index]++;
+    if (index === 0)
+        incrementCookie("totalPerfects");
+
     let total = 0;
     for (const score of sessionScores)
         total += score;
@@ -166,31 +169,44 @@ function addScore(index) {
             + sessionScores[i] + "<br>"
             + `${(sessionScores[i] * 100 / total).toFixed(1)}%`;
     }
-    saveScores();
 }
 
-function saveScores() {
-    for (let i = 0; i < sessionScores.length; i++)
-        document.cookie = `score${i}=${sessionScores[i]}`;
+function loadCookies() {
+    let cookieCareerHigh = getCookie("careerHigh");
+    if (cookieCareerHigh !== undefined)
+        careerHigh = Number.parseFloat(cookieCareerHigh);
 }
 
-function loadScores() {
-    for (let i = 0; i < sessionScores.length; i++)
-        sessionScores[i] = getCookie(`score${i}`);
+function setCookie(key, value) {
+    document.cookie = `${key}=${value}`;
+}
+
+function incrementCookie(key) {
+    let value = getCookie(key);
+    if (value !== undefined)
+        setCookie(key, Number.parseInt(value) + 1);
+    else
+        setCookie(key, 1);
 }
 
 // https://stackoverflow.com/a/15724300
-function getCookie(str) {
+function getCookie(key) {
     var value = "; " + document.cookie;
-    var parts = value.split("; " + str + "=");
+    var parts = value.split("; " + key + "=");
     if (parts.length == 2) return parts.pop().split(";").shift();
+}
+
+function resetCanvasStyle() {
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = "#FFF";
+    ctx.lineCap = 'round';
 }
 
 function onMouseDown(e) {
     if (isDrawing)
         return;
     isDrawing = true;
-    vertices = Array();
+    vertices = [];
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 
