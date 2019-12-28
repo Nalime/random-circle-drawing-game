@@ -21,99 +21,93 @@ document.addEventListener("touchend", onMouseUp, false);
 document.addEventListener("mousemove", onMouseMove, false);
 document.addEventListener("touchmove", onTouchMove, false);
 
-class Point {
-    constructor(x, y) {
-        this.x = x;
-        this.y = y;
-    }
-
-    length() {
-        return Math.hypot(this.x, this.y);
-    }
-
-    static add(v, w) {
-        return new Point(v.x + w.x, v.y + w.y);
-    }
-
-    static diff(v, w) {
-        return new Point(w.x - v.x, w.y - v.y);
-    }
-
-    static multiply(v, s) {
-        return new Point(v.x * s, v.y * s);
-    }
-
-    static dot(v, w) {
-        return v.x * w.x + v.y * w.y;
-    }
-
-    static dist(v, w) {
-        return Math.hypot(v.x - w.x, v.y - w.y);
-    }
-}
-
 function drawVertex(x, y, pressure) {
     ctx.lineWidth = pressure * 10;
     ctx.beginPath();
     if (vertices.length > 0)
-        ctx.moveTo(vertices[vertices.length - 1].x, vertices[vertices.length - 1].y);
+        ctx.moveTo(vertices[vertices.length - 1][0] / 2, vertices[vertices.length - 1][1] / 2);
     ctx.lineTo(x, y);
     ctx.stroke();
     ctx.closePath();
-    vertices.push(new Point(x, y));
+    vertices.push([2 * x, 2 * y, 1]);
 }
 
-function evaluate() {
-    // Accuracy calculation
-    let totalLength = 0;
+function leastSquaresCircle() {
+    // Least squares solution
+    let ATA = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
 
-    let center = new Point(0, 0);
-    for (let i = 1; i < vertices.length; i++) {
-        let length = Point.dist(vertices[i], vertices[i - 1]);
-        totalLength += length;
-        center.x += vertices[i].x * length;
-        center.y += vertices[i].y * length;
+    for (let i = 0; i < 3; i++)
+        for (let j = 0; j < 3; j++)
+            for (let k = 0; k < vertices.length; k++)
+                ATA[i][j] += vertices[k][i] * vertices[k][j];
+
+    let ATb = [];
+    let temp = 0;
+
+    for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < vertices.length; j++)
+            temp += vertices[j][i] * (Math.pow(vertices[j][0], 2) + Math.pow(vertices[j][1], 2));
+        ATb.push(temp);
+        temp = 0;
     }
-    center.x /= totalLength;
-    center.y /= totalLength;
 
-    let radius = 0;
-    for (let i = 1; i < vertices.length; i++) {
-        let length = Point.dist(vertices[i], vertices[i - 1]);
-        let distToCenter = Point.dist(vertices[i], center);
-        radius += distToCenter * length;
+    // Gauss-Jordan Elimination
+    for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 3; j++) {
+            if (i === j)
+                continue;
+            let m = ATA[j][i] / ATA[i][i];
+            for (let k = i; k < 3; k++)
+                ATA[j][k] -= ATA[i][k] * m;
+            ATb[j] -= ATb[i] * m;
+        }
     }
-    radius /= totalLength;
 
-    let radiusAccuracy = 0;
-    for (let i = 1; i < vertices.length; i++) {
-        let length = Point.dist(vertices[i], vertices[i - 1]);
-        let distToCenter = Point.dist(vertices[i], center);
+    let sol = [];
+    for (let i = 0; i < 3; i++)
+        sol.push(ATb[i] / ATA[i][i]);
 
-        let radiusAccuracyThis = Math.max(1 - Math.abs(distToCenter / radius - 1) / 0.15, 0);
-        radiusAccuracy += radiusAccuracyThis * length;
-    }
-    radiusAccuracy /= totalLength;
-
-    let startEndDiff = Point.dist(vertices[vertices.length - 1], center)
-        - Point.dist(vertices[0], center);
-    let startEndAccuracy = Math.max(1 - Math.pow(Math.abs(startEndDiff / radius) / 0.1, 2), 0);
-
-    let accuracy = radiusAccuracy * 0.8 + startEndAccuracy * 0.2;
+    let center = [sol[0] / 4, sol[1] / 4];
+    let radius = Math.sqrt(sol[2] + Math.pow(center[0] * 2, 2) + Math.pow(center[1] * 2, 2)) / 2;
 
     // Draw reference circle
     ctx.lineWidth = 5;
     ctx.strokeStyle = "#F008";
     ctx.beginPath();
-    ctx.lineTo(center.x, center.y);
+    ctx.lineTo(center[0], center[1]);
     ctx.stroke();
     ctx.closePath();
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.arc(center.x, center.y, radius, 0, Math.PI * 2);
+    ctx.arc(center[0], center[1], radius, 0, Math.PI * 2);
     ctx.stroke();
     ctx.closePath();
     resetCanvasStyle();
+
+    // Accuracy calculation
+    let totalLength = 0;
+    for (let i = 1; i < vertices.length; i++)
+        totalLength += Math.hypot(vertices[i][0] - vertices[i - 1][0], vertices[i][1] - vertices[i - 1][1]) / 2;
+
+    let accuracy = 0;
+    for (let i = 1; i < vertices.length; i++) {
+        let length = Math.hypot(vertices[i][0] - vertices[i - 1][0], vertices[i][1] - vertices[i - 1][1]) / 2;
+        let distToCenter = Math.hypot(vertices[i][0] / 2 - center[0], vertices[i][1] / 2 - center[1]);
+
+        let accuracyThis = Math.max(1 - Math.abs(distToCenter / radius - 1) / 0.1, 0);
+        accuracy += accuracyThis * length;
+    }
+    accuracy /= totalLength;
+    
+    accuracy *= Math.pow(Math.min(totalLength, 1.9 * Math.PI * radius) / (1.9 * Math.PI * radius), 2);
+
+    return accuracy;
+}
+
+function evaluate() {
+    let accCircle = leastSquaresCircle();
+
+    let accuracy = accCircle;
 
     if (accuracy > careerHigh) {
         careerHigh = accuracy;
@@ -147,8 +141,8 @@ function evaluate() {
         scorePop.style.color = "#FFF";
     }
     scorePop.innerHTML += `<br><div id=\"score-percent\">${(accuracy * 100).toFixed(1)}%<br>`
-        + `<div id=\"score-percent-detail\">(Radius: ${(radiusAccuracy * 100).toFixed(1)}%`
-        + `, Start-End: ${(startEndAccuracy * 100).toFixed(1)}%)`
+        // + `<div id=\"score-percent-detail\">(Radius: ${(radiusAccuracy * 100).toFixed(1)}%`
+        // + `, Start-End: ${(startEndAccuracy * 100).toFixed(1)}%)`
         + "</div></div>";
 
     scorePop.style.animation = 'none';
@@ -231,6 +225,6 @@ function onTouchMove(e) {
         let touch = e.touches[0];
         touchX = touch.pageX - canvas.offsetLeft;
         touchY = touch.pageY - canvas.offsetTop;
-        drawVertex(touchX, touchY, 0.2 + 0.6 * touch.force);
+        drawVertex(touchX, touchY, 0.1 + 0.9 * touch.force);
     }
 }
