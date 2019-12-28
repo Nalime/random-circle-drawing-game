@@ -140,7 +140,7 @@ function evaluate() {
         scorePop.innerHTML += "<strong> PERFECT!</strong>";
         scorePop.style.color = "#FFF";
     }
-    scorePop.innerHTML += `<br><div id=\"score-percent\">${(accuracy * 100).toFixed(1)}%<br>`
+    scorePop.innerHTML += `<br><div id=\"score-percent\" ${accuracy < 0.95 ? "" : "style=\"color:#FC1\""}>${(accuracy * 100).toFixed(1)}%<br>`
         // + `<div id=\"score-percent-detail\">(Radius: ${(radiusAccuracy * 100).toFixed(1)}%`
         // + `, Start-End: ${(startEndAccuracy * 100).toFixed(1)}%)`
         + "</div></div>";
