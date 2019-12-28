@@ -94,7 +94,7 @@ function leastSquaresCircle() {
         let length = Math.hypot(vertices[i][0] - vertices[i - 1][0], vertices[i][1] - vertices[i - 1][1]) / 2;
         let distToCenter = Math.hypot(vertices[i][0] / 2 - center[0], vertices[i][1] / 2 - center[1]);
 
-        let accuracyThis = Math.max(1 - Math.abs(distToCenter / radius - 1) / 0.1, 0);
+        let accuracyThis = Math.max(1 - Math.abs(distToCenter / radius - 1) / 0.15, 0);
         accuracy += accuracyThis * length;
     }
     accuracy /= totalLength;
