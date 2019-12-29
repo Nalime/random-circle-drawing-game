@@ -94,13 +94,18 @@ function leastSquaresCircle() {
         let length = Math.hypot(vertices[i][0] - vertices[i - 1][0], vertices[i][1] - vertices[i - 1][1]) / 2;
         let distToCenter = Math.hypot(vertices[i][0] / 2 - center[0], vertices[i][1] / 2 - center[1]);
 
-        let accuracyThis = Math.max(1 - Math.abs(distToCenter / radius - 1) / 0.15, 0);
+        // 30% off = 0% individual accuracy
+        let accuracyThis = Math.max(1 - Math.abs(distToCenter / radius - 1) / 0.3, 0);
         accuracy += accuracyThis * length;
     }
     accuracy /= totalLength;
     
+    // Penalty for not drawing a full circle
     accuracy *= Math.pow(Math.min(totalLength, 1.9 * Math.PI * radius) / (1.9 * Math.PI * radius), 2);
 
+    // Scales final accuracy%
+    accuracy = 1 - (accuracy < 0.9 ? (1 + (1 - accuracy) * 8) / 9 : (1 - accuracy) * 2);
+    
     return accuracy;
 }
 
