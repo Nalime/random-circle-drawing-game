@@ -6,13 +6,16 @@ const scoresElements =
     document.querySelector("#scores-great"),
     document.querySelector("#scores-good"),
     document.querySelector("#scores-bad")]
+const stats = document.querySelector("#career-stats")
 let vertices = [];
 let isDrawing = false;
 let sessionHigh = 0;
 let careerHigh = 0;
-let sessionScores = [0, 0, 0, 0];
+let sessionScores = [0, 0, 0, 0, 0];
+let careerScores = [0, 0];
 
 loadCookies();
+updateStats();
 resetCanvasStyle();
 
 document.addEventListener("pointerdown", onMouseDown, false);
@@ -33,6 +36,8 @@ function drawVertex(x, y, pressure) {
 }
 
 function leastSquaresCircle() {
+    let modifier = 0.3
+
     // Least squares solution
     let ATA = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
 
@@ -94,29 +99,28 @@ function leastSquaresCircle() {
         let length = Math.hypot(vertices[i][0] - vertices[i - 1][0], vertices[i][1] - vertices[i - 1][1]) / 2;
         let distToCenter = Math.hypot(vertices[i][0] / 2 - center[0], vertices[i][1] / 2 - center[1]);
 
-        // 30% off = 0% individual accuracy
-        let accuracyThis = Math.max(1 - Math.abs(distToCenter / radius - 1) / 0.3, 0);
+        // default => 30% off = 0% individual accuracy
+        let accuracyThis = Math.max(1 - Math.abs(distToCenter / radius - 1) / modifier, 0);
         accuracy += accuracyThis * length;
     }
     accuracy /= totalLength;
-    
+
     // Penalty for not drawing a full circle
     accuracy *= Math.pow(Math.min(totalLength, 1.9 * Math.PI * radius) / (1.9 * Math.PI * radius), 2);
 
     // Scales final accuracy%
     accuracy = 1 - (accuracy < 0.9 ? (1 + (1 - accuracy) * 8) / 9 : (1 - accuracy) * 2);
-    
+
     return accuracy;
 }
 
 function evaluate() {
-    let accCircle = leastSquaresCircle();
-
-    let accuracy = accCircle;
+    let accuracy = leastSquaresCircle();
 
     if (accuracy > careerHigh) {
         careerHigh = accuracy;
         setCookie("careerHigh", accuracy);
+        updateStats();
     }
 
     if (accuracy > sessionHigh) {
@@ -126,28 +130,30 @@ function evaluate() {
     // Increments appropriate score and show the "judgment"
     scorePop.innerHTML = "";
     if (accuracy < 0.6) {
-        incrementScore(3);
+        incrementScore(4);
         scorePop.innerHTML += "BAD";
         scorePop.style.color = "#15C";
     }
     else if (accuracy < 0.8) {
-        incrementScore(2);
+        incrementScore(3);
         scorePop.innerHTML += "GOOD";
         scorePop.style.color = "#9F3";
     }
     else if (accuracy < 0.9) {
-        incrementScore(1);
+        incrementScore(2);
         scorePop.innerHTML += " GREAT!";
         scorePop.style.color = "#D3B";
     }
     else {
-        incrementScore(0);
+        if (accuracy < 0.95)
+            incrementScore(1);
+        else
+            incrementScore(0);
         scorePop.innerHTML += "<strong> PERFECT!</strong>";
         scorePop.style.color = "#FFF";
     }
-    scorePop.innerHTML += `<br><div id=\"score-percent\" ${accuracy < 0.95 ? "" : "style=\"color:#FC1\""}>${(accuracy * 100).toFixed(1)}%<br>`
-        // + `<div id=\"score-percent-detail\">(Radius: ${(radiusAccuracy * 100).toFixed(1)}%`
-        // + `, Start-End: ${(startEndAccuracy * 100).toFixed(1)}%)`
+    scorePop.innerHTML += `<br><div id=\"score-percent\" ${accuracy < 0.95 ? "" : "style=\"color:#FC1\""}>`
+        + `${(accuracy * 100).toFixed(1)}%<br>`
         + "</div></div>";
 
     scorePop.style.animation = 'none';
@@ -157,23 +163,50 @@ function evaluate() {
 
 function incrementScore(index) {
     sessionScores[index]++;
-    if (index === 0)
+    if (index === 0) {
+        careerScores[0]++;
+        incrementCookie("totalBigPerfects");
+        updateStats();
+    }
+    else if (index === 1) {
+        careerScores[1]++;
         incrementCookie("totalPerfects");
+        updateStats();
+    }
 
     let total = 0;
     for (const score of sessionScores)
         total += score;
-    for (let i = 0; i < sessionScores.length; i++) {
-        scoresElements[i].innerHTML = scoresElements[i].innerHTML.split("<br>")[0] + "<br>"
-            + sessionScores[i] + "<br>"
-            + `${(sessionScores[i] * 100 / total).toFixed(1)}%`;
+
+    scoresElements[0].innerHTML = `${scoresElements[0].innerHTML.split("<br>")[0]}<br>`
+        + `${sessionScores[0] + sessionScores[1]} ${sessionScores[0] != 0 ? `(${sessionScores[0]})` : ""}<br>`
+        + `${((sessionScores[0] + sessionScores[1]) * 100 / total).toFixed(1)}%`;
+
+    for (let i = 1; i < scoresElements.length; i++) {
+        scoresElements[i].innerHTML = `${scoresElements[i].innerHTML.split("<br>")[0]}<br>`
+            + `${sessionScores[i + 1]}<br>`
+            + `${(sessionScores[i + 1] * 100 / total).toFixed(1)}%`;
     }
+}
+
+function updateStats() {
+    stats.innerHTML = `PERFECT: ${careerScores[0] + careerScores[1]}`
+        + `${careerScores[0] != 0 ? ` (${careerScores[0]})` : ""}<br>`
+        + `HIGH: ${(careerHigh * 100).toFixed(1)}%`;
 }
 
 function loadCookies() {
     let cookieCareerHigh = getCookie("careerHigh");
     if (cookieCareerHigh !== undefined)
         careerHigh = Number.parseFloat(cookieCareerHigh);
+
+    let cookieBigPerfects = getCookie("totalBigPerfects");
+    if (cookieBigPerfects !== undefined)
+        careerScores[0] = Number.parseFloat(cookieBigPerfects);
+
+    let cookiePerfects = getCookie("totalPerfects");
+    if (cookiePerfects !== undefined)
+        careerScores[1] = Number.parseFloat(cookiePerfects);
 }
 
 function setCookie(key, value) {

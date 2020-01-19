@@ -54,11 +54,21 @@ body {
     width: 100%;
 }
 
+#career-stats {
+    position: absolute;
+    bottom: 0;
+    right: 5px;
+    text-align: right;
+    color: #ddda;
+}
+
 #scoreboard {
     width: 20em;
     text-align: center;
     color: #ddda;
 }
+
+#career-stats {}
 
 #scores-perfect {
     float: left;
@@ -84,12 +94,5 @@ strong {
     --spacing: 0.05em;
     --spacing-neg: -0.05em;
     --blur: 0.1em;
-
-    text-shadow: 
-    var(--spacing-neg) var(--spacing-neg) var(--blur) #f22b,
-                     0 var(--spacing-neg) var(--blur) #ff2b,
-        var(--spacing) var(--spacing-neg) var(--blur) #2f2b,
-        var(--spacing)     var(--spacing) var(--blur) #2ffb,
-                     0     var(--spacing) var(--blur) #22fb,
-    var(--spacing-neg)     var(--spacing) var(--blur) #f2fb;
+    text-shadow: var(--spacing-neg) var(--spacing-neg) var(--blur) #f22b, 0 var(--spacing-neg) var(--blur) #ff2b, var(--spacing) var(--spacing-neg) var(--blur) #2f2b, var(--spacing) var(--spacing) var(--blur) #2ffb, 0 var(--spacing) var(--blur) #22fb, var(--spacing-neg) var(--spacing) var(--blur) #f2fb;
 }
