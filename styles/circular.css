@@ -54,6 +54,12 @@ body {
     width: 100%;
 }
 
+#scoreboard {
+    width: 20em;
+    text-align: center;
+    color: #ddda;
+}
+
 #career-stats {
     position: absolute;
     bottom: 0;
@@ -61,14 +67,6 @@ body {
     text-align: right;
     color: #ddda;
 }
-
-#scoreboard {
-    width: 20em;
-    text-align: center;
-    color: #ddda;
-}
-
-#career-stats {}
 
 #scores-perfect {
     float: left;
